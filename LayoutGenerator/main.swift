@@ -17,21 +17,11 @@ var i = 0
 for id in layoutIds {
     i += 1
     var holding = RankPositions(id: id)
-    holding.reassignRanks(from: nil, to: .east)
-    var keep = false
+    var vh = VariableHolding(partialHolding: holding, variablePair: .ew)
     print("Considering: \(i) of \(originalCount) - \(holding) - ", terminator: "")
-    for layout in holding.allPossibleLayouts(pair: .ew, marked: []) {
-        let dd = DoubleDummyAnalysis(holding: layout.holding, leadPair: .ns)
-        let ddStupid = DoubleDummyAnalysis(holding: layout.holding, leadPair: .ns, leadOption: .leadHigh)
-        if dd.leadAnalyses.last!.tricksTaken > ddStupid.leadAnalyses.last!.tricksTaken {
-            keep = true
-            break
-        }
-      //  let stats = StatisticalAnalysis(partialHolding: holding, requiredTricks: 0)
-      //  let badPlay = StatisticalAnalysis(partialHolding: holding, requiredTricks: 0, leadOption: .leadHigh)
-      //  if stats.leadsStatistics.last!.totalTricks == badPlay.leadsStatistics.last!.totalTricks
-    }
-    if keep {
+    let dd = StatisticalAnalysis.analyze(holding: vh, leadPair: .ns, requiredTricks: 0, cache: nil)
+    let ddStupid = StatisticalAnalysis.analyze(holding: vh, leadPair: .ns, requiredTricks: 0, leadOption: .leadHigh, cache: nil)
+    if dd.bestStats > ddStupid.bestStats {
         print(" kept")
     } else {
         layoutIds.remove(id)
