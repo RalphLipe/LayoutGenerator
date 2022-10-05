@@ -9,14 +9,48 @@ import Foundation
 import ContractBridge
 
 var layoutIds = LayoutGenerator.generateLayouts()
-/*
-for id in layoutIds {
-    let layout = SuitLayout(suitLayoutId: id)
-    print(layout.description)
-}
-*/
-print("Total layouts = \(layoutIds.count)")
 
+print("Total layouts = \(layoutIds.count)")
+print("PRUNING")
+let originalCount = layoutIds.count
+var i = 0
+for id in layoutIds {
+    i += 1
+    var holding = RankPositions(id: id)
+    holding.reassignRanks(from: nil, to: .east)
+    var keep = false
+    print("Considering: \(i) of \(originalCount) - \(holding) - ", terminator: "")
+    for layout in holding.allPossibleLayouts(pair: .ew, marked: []) {
+        let dd = DoubleDummyAnalysis(holding: layout.holding, leadPair: .ns)
+        let ddStupid = DoubleDummyAnalysis(holding: layout.holding, leadPair: .ns, leadOption: .leadHigh)
+        if dd.leadAnalyses.last!.tricksTaken > ddStupid.leadAnalyses.last!.tricksTaken {
+            keep = true
+            break
+        }
+      //  let stats = StatisticalAnalysis(partialHolding: holding, requiredTricks: 0)
+      //  let badPlay = StatisticalAnalysis(partialHolding: holding, requiredTricks: 0, leadOption: .leadHigh)
+      //  if stats.leadsStatistics.last!.totalTricks == badPlay.leadsStatistics.last!.totalTricks
+    }
+    if keep {
+        print(" kept")
+    } else {
+        layoutIds.remove(id)
+        print(" removed")
+    }
+}
+print("After pruning, \(layoutIds.count) reamain of \(originalCount)")
+var encoder = JSONEncoder()
+let data = try! encoder.encode(layoutIds)
+let s = String(data: data, encoding: .utf8)
+print(s!)
+var recovered: [Int] = []
+let decoder = JSONDecoder()
+let decodedIDs = try! decoder.decode(Array<Int>.self, from: data)
+print(decodedIDs.count)
+print(layoutIds.count)
+
+
+/*
 
 let originalCount = layoutIds.count
 print("NOW PRUNING")
@@ -45,15 +79,5 @@ for id in layoutIds {
         }
     }
 }
-print("After pruning, \(layoutIds.count) reamain of \(originalCount)")
 
-var encoder = JSONEncoder()
-let data = try! encoder.encode(layoutIds)
-let s = String(data: data, encoding: .utf8)
-print(s!)
-var recovered: [Int] = []
-let decoder = JSONDecoder()
-let decodedIDs = try! decoder.decode(Array<Int>.self, from: data)
-print(decodedIDs.count)
-print(layoutIds.count)
-
+*/
