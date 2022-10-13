@@ -16,12 +16,31 @@ let originalCount = layoutIds.count
 var i = 0
 for id in layoutIds {
     i += 1
+    var keep = true
     var holding = RankPositions(id: id)
     var vh = VariableHolding(partialHolding: holding, variablePair: .ew)
     print("Considering: \(i) of \(originalCount) - \(holding) - ", terminator: "")
     let dd = StatisticalAnalysis.analyze(holding: vh, leadPair: .ns, requiredTricks: 0, cache: nil)
     let ddStupid = StatisticalAnalysis.analyze(holding: vh, leadPair: .ns, requiredTricks: 0, leadOption: .leadHigh, cache: nil)
-    if dd.bestStats > ddStupid.bestStats {
+    if dd.bestStats == ddStupid.bestStats {
+        keep = false
+    } else {
+        // Now take the lowest mid-rank of the holding and make it lower.  If they are equal
+        // results then this is useless.
+        var firstGap = holding[nil].min()!
+        var firstMid = firstGap
+        while firstMid < .ace && holding[firstMid] == nil {
+            firstMid = firstMid.nextHigher!
+        }
+        if firstMid != .ace {
+            holding[firstGap] = holding[firstMid]
+            holding[firstMid] = nil
+            vh = VariableHolding(partialHolding: holding, variablePair: .ew)
+            let ddLowered = StatisticalAnalysis.analyze(holding: vh, leadPair: .ns, requiredTricks: 0, cache: nil)
+            keep = dd.bestStats > ddLowered.bestStats
+        }
+    }
+    if keep {
         print(" kept")
     } else {
         layoutIds.remove(id)
